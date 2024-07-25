@@ -83,7 +83,6 @@ def check_accuracy(loader, model, device="cuda"):
     model.train()
 
 
-
 def save_predictions_as_imgs(
         loader, model, folder="saved_images/", device="cuda"
 ):

@@ -16,6 +16,7 @@ from utils import (
 # hyperparameters:
 
 
+
 learning_rate = 1e-4
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 batch_size = 8

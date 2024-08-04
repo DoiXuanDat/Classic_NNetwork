@@ -74,6 +74,7 @@ class VOCDataset(Dataset):
         targets = {}
         targets['bboxes'] = torch.as_tensor([detection['bbox'] for detection in im_info['detections']])
         targets['labels'] = torch.as_tensor([detection['label'] for detection in im_info['detections']])
+
         if to_flip:
             for idx, box in enumerate(targets['bboxes']):
                 x1, y1, x2, y2 = box

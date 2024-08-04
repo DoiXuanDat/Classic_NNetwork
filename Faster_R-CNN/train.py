@@ -34,9 +34,7 @@ def train(args):
         torch.cuda.manual_seed_all(seed)
 
     voc = VOCDataset('train',im_dir=dataset_config['im_train_path'],ann_dir=dataset_config['ann_train_path'])
-
     train_dataset = DataLoader(voc, batch_size=1, shuffle=True, num_workers=4)
-
     faster_rcnn_model = FasterRCNN(model_config, num_classes=dataset_config['num_classes'])
     faster_rcnn_model.train()
     faster_rcnn_model.to(device)
@@ -46,7 +44,6 @@ def train(args):
                                 weight_decay=5E-4,
                                 momentum=0.9)
     scheduler = MultiStepLR(optimizer, milestones=train_config['lr_steps'], gamma=0.1)
-
     acc_steps = train_config['acc_steps']
     num_epochs = train_config['num_epochs']
     step_count = 1
@@ -90,7 +87,6 @@ def train(args):
         print(loss_output)
         scheduler.step()
     print('Done Training...')
-
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Arguments for faster rcnn training')

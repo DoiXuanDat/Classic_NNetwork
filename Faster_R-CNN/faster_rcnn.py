@@ -293,18 +293,6 @@ class RegionProposalNetwork(nn.Module):
         return labels, matched_gt_boxes
 
     def filter_proposals(self, proposals, cls_scores, image_shape):
-        r"""
-        This method does three kinds of filtering/modifications
-        1. Pre NMS topK filtering
-        2. Make proposals valid by clamping coordinates(0, width/height)
-        2. Small Boxes filtering based on width and height
-        3. NMS
-        4. Post NMS topK filtering
-        :param proposals: (num_anchors_in_image, 4)
-        :param cls_scores: (num_anchors_in_image, 4) these are cls logits
-        :param image_shape: resized image shape needed to clip proposals to image boundary
-        :return: proposals and cls_scores: (num_filtered_proposals, 4) and (num_filtered_proposals)
-        """
         # Pre NMS Filtering
         cls_scores = cls_scores.reshape(-1)
         cls_scores = torch.sigmoid(cls_scores)
@@ -342,23 +330,6 @@ class RegionProposalNetwork(nn.Module):
         return proposals, cls_scores
 
     def forward(self, image, feat, target=None):
-        r"""
-        Main method for RPN does the following:
-        1. Call RPN specific conv layers to generate classification and
-            bbox transformation predictions for anchors
-        2. Generate anchors for entire image
-        3. Transform generated anchors based on predicted bbox transformation to generate proposals
-        4. Filter proposals
-        5. For training additionally we do the following:
-            a. Assign target ground truth labels and boxes to each anchors
-            b. Sample positive and negative anchors
-            c. Compute classification loss using sampled pos/neg anchors
-            d. Compute Localization loss using sampled pos anchors
-        :param image:
-        :param feat:
-        :param target:
-        :return:
-        """
         # Call RPN layers
         rpn_feat = nn.ReLU()(self.rpn_conv(feat))
         cls_scores = self.cls_layer(rpn_feat)
@@ -391,7 +362,6 @@ class RegionProposalNetwork(nn.Module):
             box_transform_pred.detach().reshape(-1, 1, 4),
             anchors)
         proposals = proposals.reshape(proposals.size(0), 4)
-        ######################
 
         proposals, scores = self.filter_proposals(proposals, cls_scores.detach(), image.shape)
         rpn_output = {
@@ -440,12 +410,6 @@ class RegionProposalNetwork(nn.Module):
 
 
 class ROIHead(nn.Module):
-    r"""
-    ROI head on top of ROI pooling layer for generating
-    classification and box transformation predictions
-    We have two fc layers followed by a classification fc layer
-    and a bbox regression fc layer
-    """
 
     def __init__(self, model_config, num_classes, in_channels):
         super(ROIHead, self).__init__()
@@ -472,16 +436,6 @@ class ROIHead(nn.Module):
         torch.nn.init.constant_(self.bbox_reg_layer.bias, 0)
 
     def assign_target_to_proposals(self, proposals, gt_boxes, gt_labels):
-        r"""
-        Given a set of proposals and ground truth boxes and their respective labels.
-        Use IOU to assign these proposals to some gt box or background
-        :param proposals: (number_of_proposals, 4)
-        :param gt_boxes: (number_of_gt_boxes, 4)
-        :param gt_labels: (number_of_gt_boxes)
-        :return:
-            labels: (number_of_proposals)
-            matched_gt_boxes: (number_of_proposals, 4)
-        """
         # Get IOU Matrix between gt boxes and proposals
         iou_matrix = get_iou(gt_boxes, proposals)
         # For each gt box proposal find best matching gt box
@@ -511,21 +465,6 @@ class ROIHead(nn.Module):
         return labels, matched_gt_boxes_for_proposals
 
     def forward(self, feat, proposals, image_shape, target):
-        r"""
-        Main method for ROI head that does the following:
-        1. If training assign target boxes and labels to all proposals
-        2. If training sample positive and negative proposals
-        3. If training get bbox transformation targets for all proposals based on assignments
-        4. Get ROI Pooled features for all proposals
-        5. Call fc6, fc7 and classification and bbox transformation fc layers
-        6. Compute classification and localization loss
-
-        :param feat:
-        :param proposals:
-        :param image_shape:
-        :param target:
-        :return:
-        """
         if self.training and target is not None:
             # Add ground truth to proposals
             proposals = torch.cat([proposals, target['bboxes'][0]], dim=0)
@@ -629,17 +568,6 @@ class ROIHead(nn.Module):
             return frcnn_output
 
     def filter_predictions(self, pred_boxes, pred_labels, pred_scores):
-        r"""
-        Method to filter predictions by applying the following in order:
-        1. Filter low scoring boxes
-        2. Remove small size boxes∂
-        3. NMS for each class separately
-        4. Keep only topK detections
-        :param pred_boxes:
-        :param pred_labels:
-        :param pred_scores:
-        :return:
-        """
         # remove low scoring boxes
         keep = torch.where(pred_scores > self.low_score_threshold)[0]
         pred_boxes, pred_scores, pred_labels = pred_boxes[keep], pred_scores[keep], pred_labels[keep]

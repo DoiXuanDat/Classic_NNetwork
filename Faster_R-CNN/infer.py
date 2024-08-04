@@ -270,7 +270,6 @@ def evaluate_map(args):
         print('AP for class {} = {:.4f}'.format(voc.idx2label[idx], all_aps[voc.idx2label[idx]]))
     print('Mean Average Precision : {:.4f}'.format(mean_ap))
 
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Arguments for faster rcnn inference')
     parser.add_argument('--config', dest='config_path',
